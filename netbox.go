@@ -83,7 +83,14 @@ func (n *Netbox) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg)
 		answers = aaaa(qname, uint32(n.TTL.Seconds()), ips)
 	case dns.TypePTR:
 		domains, err = n.queryreverse(qname)
-		answers = ptr(qname, uint32(n.TTL.Seconds()), domains)
+		// Filter out empty strings from domains
+		filteredDomains := make([]string, 0, len(domains))
+		for _, domain := range domains {
+			if domain != "" {
+				filteredDomains = append(filteredDomains, domain)
+			}
+		}
+		answers = ptr(qname, uint32(n.TTL.Seconds()), filteredDomains)
 	default:
 		// always fallthrough if configured
 		if n.Fall.Through(qname) {
